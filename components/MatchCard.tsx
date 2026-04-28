@@ -12,20 +12,43 @@ export function MatchCard({ match, onSave }: Props) {
   const [away, setAway] = useState(match.awayScore ?? 0);
 
   return (
-    <div className="rounded-xl border border-slate-700 p-4 bg-slate-900">
-      <div className="text-xs text-slate-400">{new Date(match.date).toLocaleDateString()} • {match.stadium} ({match.city})</div>
-      <div className="mt-3 flex items-center justify-between gap-2">
-        <Team name={match.homeTeam.name} code={match.homeTeam.code} />
-        <input className="w-14 rounded p-1 text-center" type="number" min={0} value={home} onChange={(e) => setHome(Number(e.target.value))} />
-        <span>-</span>
-        <input className="w-14 rounded p-1 text-center" type="number" min={0} value={away} onChange={(e) => setAway(Number(e.target.value))} />
-        <Team name={match.awayTeam.name} code={match.awayTeam.code} />
+    <article className="glass rounded-2xl p-4 transition hover:-translate-y-0.5 hover:bg-white/[0.07]">
+      <header className="mb-3 flex items-start justify-between gap-3 text-xs text-slate-400">
+        <div>
+          <p>{new Date(match.date).toLocaleDateString()}</p>
+          <p className="mt-1">{match.stadium} · {match.city}</p>
+        </div>
+        <div className="rounded-lg bg-slate-800/80 px-2 py-1 text-[10px] uppercase tracking-wider text-cyan-300">
+          {match.phase} {match.group ? `· G${match.group}` : ''}
+        </div>
+      </header>
+
+      <div className="space-y-2">
+        <Row name={match.homeTeam.name} code={match.homeTeam.code} value={home} onChange={setHome} />
+        <Row name={match.awayTeam.name} code={match.awayTeam.code} value={away} onChange={setAway} />
       </div>
-      <button className="mt-3 rounded bg-emerald-600 px-3 py-1 text-sm" onClick={() => onSave(match.id, home, away)}>Guardar</button>
-    </div>
+
+      <button className="btn-primary mt-4 w-full" onClick={() => onSave(match.id, home, away)}>
+        Guardar marcador
+      </button>
+    </article>
   );
 }
 
-function Team({ name, code }: { name: string; code: string }) {
-  return <div className="flex items-center gap-2 min-w-40"><img src={`https://flagcdn.com/w40/${code}.png`} alt={name} className="h-5 w-8 object-cover" /> <span>{name}</span></div>;
+function Row({ name, code, value, onChange }: { name: string; code: string; value: number; onChange: (n: number) => void }) {
+  return (
+    <div className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-slate-900/70 px-2 py-2">
+      <div className="flex min-w-0 items-center gap-2">
+        <img src={`https://flagcdn.com/w40/${code}.png`} alt={name} className="h-5 w-8 rounded-sm object-cover" />
+        <span className="truncate text-sm">{name}</span>
+      </div>
+      <input
+        className="h-9 w-14 rounded-lg border border-white/10 bg-slate-800 text-center text-sm text-white outline-none focus:border-emerald-400"
+        type="number"
+        min={0}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+      />
+    </div>
+  );
 }
