@@ -19,6 +19,8 @@
 - `GET /api/standings`
 - `GET /api/third-places`
 - `POST /api/simulate`
+  - body `{ \"all\": true }` simula todo tu torneo
+  - body `{ \"reset\": true }` reinicia marcadores de tu torneo
 
 ## Demo seed
 - usuario: `demo@worldcup.local`

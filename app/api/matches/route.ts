@@ -19,7 +19,11 @@ export async function PATCH(req: NextRequest) {
   const body = updateSchema.safeParse(await req.json());
   if (!body.success) return NextResponse.json({ error: body.error.flatten() }, { status: 400 });
 
-  await prisma.match.update({ where: { id: body.data.id }, data: { homeScore: body.data.homeScore, awayScore: body.data.awayScore } });
+  const result = await prisma.match.updateMany({
+    where: { id: body.data.id, tournamentId: ensured.tournamentId },
+    data: { homeScore: body.data.homeScore, awayScore: body.data.awayScore }
+  });
+  if (result.count === 0) return NextResponse.json({ error: 'Match not found' }, { status: 404 });
   await recomputeStandings(ensured.tournamentId);
   await progressKnockout(ensured.tournamentId);
   return NextResponse.json({ ok: true });

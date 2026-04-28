@@ -79,6 +79,15 @@ export default function Page() {
     await load();
   }
 
+  async function resetScores() {
+    await fetch('/api/simulate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reset: true })
+    });
+    await load();
+  }
+
   if (!isAuthenticated) {
     return (
       <main className="mx-auto flex min-h-screen max-w-xl items-center px-4 py-10">
@@ -121,7 +130,10 @@ export default function Page() {
       <section className="glass rounded-2xl p-4 md:p-5">
         <div className="flex items-center justify-between gap-3">
           <h2 className="section-title">Acciones rápidas</h2>
-          <button className="btn-secondary" onClick={simulateAll}>Simular todo</button>
+          <div className="flex gap-2">
+            <button className="btn-secondary" onClick={resetScores}>Reiniciar marcadores</button>
+            <button className="btn-secondary" onClick={simulateAll}>Simular todo</button>
+          </div>
         </div>
       </section>
 

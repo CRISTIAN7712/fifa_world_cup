@@ -150,10 +150,19 @@ export async function progressKnockout(tournamentId: string) {
   }
 }
 
-export async function simulateMatch(matchId: string) {
+export async function simulateMatchForTournament(tournamentId: string, matchId: string) {
   const home = Math.floor(Math.random() * 5);
   const away = Math.floor(Math.random() * 5);
-  await prisma.match.update({ where: { id: matchId }, data: { homeScore: home, awayScore: away } });
+  await prisma.match.updateMany({ where: { id: matchId, tournamentId }, data: { homeScore: home, awayScore: away } });
+}
+
+export async function resetTournamentScores(tournamentId: string) {
+  await prisma.match.updateMany({
+    where: { tournamentId, phase: 'groups' },
+    data: { homeScore: null, awayScore: null }
+  });
+  await prisma.match.deleteMany({ where: { tournamentId, phase: 'knockout' } });
+  await recomputeStandings(tournamentId);
 }
 
 export const matchSelect = Prisma.validator<Prisma.MatchSelect>()({
