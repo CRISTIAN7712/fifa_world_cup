@@ -53,6 +53,7 @@ model Team {
   tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   homeMatches  Match[]    @relation("HomeTeam")
   awayMatches  Match[]    @relation("AwayTeam")
+  standings    Standing[]
 
   @@unique([tournamentId, name])
 }
