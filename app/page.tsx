@@ -24,14 +24,14 @@ export default function Page() {
       return;
     }
     const [m, s, t] = await Promise.all([
-      mRes.json(),
-      fetch('/api/standings').then((r) => r.json()),
-      fetch('/api/third-places').then((r) => r.json())
+      safeJson(mRes),
+      fetch('/api/standings').then(safeJson),
+      fetch('/api/third-places').then(safeJson)
     ]);
     setIsAuthenticated(true);
-    setMatches(m.matches ?? []);
-    setStandings(s.standings ?? []);
-    setThird(t.ranking ?? []);
+    setMatches(m?.matches ?? []);
+    setStandings(s?.standings ?? []);
+    setThird(t?.ranking ?? []);
   };
 
   useEffect(() => {
@@ -235,4 +235,15 @@ function Stat({ title, value }: { title: string; value: string }) {
       <div className="mt-1 text-2xl font-bold text-white">{value}</div>
     </div>
   );
+}
+
+async function safeJson(res: Response) {
+  if (!res.ok) return null;
+  const text = await res.text();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
 }
