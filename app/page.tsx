@@ -10,12 +10,25 @@ export default function Page() {
   const [matches, setMatches] = useState<any[]>([]);
   const [standings, setStandings] = useState<any[]>([]);
   const [third, setThird] = useState<any[]>([]);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authError, setAuthError] = useState('');
   const [auth, setAuth] = useState({ email: 'demo@worldcup.local', password: 'password123' });
 
   const load = async () => {
-    const m = await fetch('/api/matches').then((r) => r.json());
-    const s = await fetch('/api/standings').then((r) => r.json());
-    const t = await fetch('/api/third-places').then((r) => r.json());
+    const mRes = await fetch('/api/matches');
+    if (mRes.status === 401) {
+      setIsAuthenticated(false);
+      setMatches([]);
+      setStandings([]);
+      setThird([]);
+      return;
+    }
+    const [m, s, t] = await Promise.all([
+      mRes.json(),
+      fetch('/api/standings').then((r) => r.json()),
+      fetch('/api/third-places').then((r) => r.json())
+    ]);
+    setIsAuthenticated(true);
     setMatches(m.matches ?? []);
     setStandings(s.standings ?? []);
     setThird(t.ranking ?? []);
@@ -34,11 +47,17 @@ export default function Page() {
   const playedMatches = matches.filter((m) => m.homeScore !== null && m.awayScore !== null).length;
 
   async function login(path: 'login' | 'register') {
-    await fetch(`/api/auth/${path}`, {
+    setAuthError('');
+    const res = await fetch(`/api/auth/${path}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(auth)
     });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setAuthError(data.error ?? 'Credenciales inválidas');
+      return;
+    }
     await load();
   }
 
@@ -60,6 +79,27 @@ export default function Page() {
     await load();
   }
 
+  if (!isAuthenticated) {
+    return (
+      <main className="mx-auto flex min-h-screen max-w-xl items-center px-4 py-10">
+        <section className="glass w-full rounded-3xl p-6 md:p-8">
+          <p className="text-sm uppercase tracking-[0.2em] text-emerald-300/90">FIFA 2026 Manager</p>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight">Iniciar sesión</h1>
+          <p className="mt-2 text-sm text-slate-300">Ingresa con tu cuenta para entrar al panel del torneo.</p>
+          <div className="mt-5 space-y-3">
+            <input className="input w-full" placeholder="email" value={auth.email} onChange={(e) => setAuth((a) => ({ ...a, email: e.target.value }))} />
+            <input className="input w-full" placeholder="password" type="password" value={auth.password} onChange={(e) => setAuth((a) => ({ ...a, password: e.target.value }))} />
+          </div>
+          {authError && <p className="mt-3 text-sm text-rose-300">{authError}</p>}
+          <div className="mt-5 flex flex-wrap gap-2">
+            <button className="btn-primary" onClick={() => login('login')}>Entrar</button>
+            <button className="btn-secondary" onClick={() => login('register')}>Crear cuenta</button>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 md:px-8 md:py-10 space-y-6">
       <header className="glass rounded-3xl p-6 md:p-8">
@@ -79,15 +119,9 @@ export default function Page() {
       </header>
 
       <section className="glass rounded-2xl p-4 md:p-5">
-        <h2 className="section-title mb-4">Autenticación</h2>
-        <div className="flex flex-col gap-3 md:flex-row md:items-center">
-          <input className="input md:max-w-sm" placeholder="email" value={auth.email} onChange={(e) => setAuth((a) => ({ ...a, email: e.target.value }))} />
-          <input className="input md:max-w-sm" placeholder="password" type="password" value={auth.password} onChange={(e) => setAuth((a) => ({ ...a, password: e.target.value }))} />
-          <div className="flex gap-2">
-            <button className="btn-primary" onClick={() => login('register')}>Registrarse</button>
-            <button className="btn-secondary" onClick={() => login('login')}>Iniciar sesión</button>
-            <button className="btn-secondary" onClick={simulateAll}>Simular todo</button>
-          </div>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="section-title">Acciones rápidas</h2>
+          <button className="btn-secondary" onClick={simulateAll}>Simular todo</button>
         </div>
       </section>
 
@@ -126,7 +160,12 @@ export default function Page() {
                     {rows.map((r: any) => (
                       <tr key={r.id} className="border-t border-white/5 hover:bg-white/5">
                         <td className="px-3 py-2">{r.position}</td>
-                        <td className="px-3 py-2">{r.team.name}</td>
+                        <td className="px-3 py-2">
+                          <div className="flex items-center gap-2">
+                            <img src={`https://flagcdn.com/w40/${r.team.code}.png`} alt={r.team.name} className="h-4 w-6 rounded-sm object-cover" />
+                            <span>{r.team.name}</span>
+                          </div>
+                        </td>
                         <td className="px-3 py-2 text-right font-semibold">{r.points}</td>
                         <td className="px-3 py-2 text-right">{r.goalDiff}</td>
                       </tr>
@@ -154,6 +193,7 @@ export default function Page() {
               <div key={t.teamId} className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3">
                 <div className="flex items-center gap-3">
                   <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-800 text-xs font-bold">{i + 1}</span>
+                  <img src={`https://flagcdn.com/w40/${t.code}.png`} alt={t.teamName} className="h-4 w-6 rounded-sm object-cover" />
                   <span className="font-medium">{t.teamName}</span>
                   <span className="text-xs text-slate-400">Grupo {t.group}</span>
                 </div>
